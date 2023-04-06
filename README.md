@@ -16,7 +16,7 @@ Install with your favorite package manager (e.g.
 
 ```lua
 {
-  "mskelton/oldies.nvim"
+  "mskelton/oldies.nvim",
 }
 ```
 
