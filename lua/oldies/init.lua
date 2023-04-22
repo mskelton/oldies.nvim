@@ -7,6 +7,9 @@ local utils = require("oldies.utils")
 local oldfiles = nil
 local index = nil
 
+-- When we switch to a new buffer, we don't want to reset the oldfiles list
+local ignore_next = false
+
 --- Sync the oldfiles list if necessary
 local function sync()
 	oldfiles = oldfiles or utils.get_oldfiles_for_cwd()
@@ -17,22 +20,25 @@ end
 M.setup = function()
 	local group = vim.api.nvim_create_augroup("oldies", {})
 
-	-- Once the user starts editing, reset the list
-	vim.api.nvim_create_autocmd("InsertLeave", {
+	-- Once the user switches to another buffer, reset the list
+	vim.api.nvim_create_autocmd("BufEnter", {
 		pattern = "*",
 		group = group,
 		callback = function()
-			M.reset()
+			if ignore_next then
+				ignore_next = false
+			else
+				M.reset()
+			end
 		end,
 	})
+end
 
-	vim.api.nvim_create_autocmd("TelescopePrompt", {
-		pattern = "*",
-		group = group,
-		callback = function()
-			M.reset()
-		end,
-	})
+--- Edit a file, but don't reset the oldfiles list
+--- @param file string
+local function edit(file)
+	ignore_next = true
+	vim.cmd.e(file)
 end
 
 --- Reset the oldfiles list and index
@@ -47,7 +53,7 @@ M.prev = function()
 
 	if index > 1 then
 		index = index - 1
-		vim.cmd.e(oldfiles[index])
+		edit(oldfiles[index])
 	end
 end
 
@@ -57,7 +63,7 @@ M.next = function()
 
 	if index < #oldfiles then
 		index = index + 1
-		vim.cmd.e(oldfiles[index])
+		edit(oldfiles[index])
 	end
 end
 
